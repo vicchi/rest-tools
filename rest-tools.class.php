@@ -1,18 +1,25 @@
 <?php
 
 class RestToolsException extends Exception {
-	public function __construct ($message, $code=0, Exception $previous=null) {
+	public function __construct ($message, $code, Exception $previous=null) {
 		parent::__construct ($message, $code, $previous);
 	}
+	
+	public function __toString () {
+		return get_class ($this) . " '{$this->message}' in {$this->file}:{$this->line}\n"
+			. "{$this->getTraceAsString()}";
+	}
+	
 }	// end-class RestToolsException
 
-class RestToolsStatusCodes {
+class RestToolsStatus {
 	// Inspired by Kris Jordan's Recess! framework code
 	// http://krisjordan.com/php-class-for-http-response-status-codes
 	
 	// Informational 1xx
 	const HTTP_CONTINUE = 100;
 	const HTTP_SWITCHING_PROTOCOLS = 101;
+	const HTTP_PROCESSING = 102;
 	// Successful 2xx
 	const HTTP_OK = 200;
 	const HTTP_CREATED = 201;
@@ -21,6 +28,9 @@ class RestToolsStatusCodes {
 	const HTTP_NO_CONTENT = 204;
 	const HTTP_RESET_CONTENT = 205;
 	const HTTP_PARTIAL_CONTENT = 206;
+	const HTTP_MULTI_STATUS = 207;
+	const HTTP_ALREADY_REPORTED = 208;
+	const HTTP_IM_USED = 226;
 	// Redirection 3xx
 	const HTTP_MULTIPLE_CHOICES = 300;
 	const HTTP_MOVED_PERMANENTLY = 301;
@@ -30,8 +40,8 @@ class RestToolsStatusCodes {
 	const HTTP_USE_PROXY = 305;
 	const HTTP_UNUSED= 306;
 	const HTTP_TEMPORARY_REDIRECT = 307;
+	const HTTP_PERMANENT_REDIRECT = 308;
 	// Client Error 4xx
-	const errorCodesBeginAt = 400;
 	const HTTP_BAD_REQUEST = 400;
 	const HTTP_UNAUTHORIZED  = 401;
 	const HTTP_PAYMENT_REQUIRED = 402;
@@ -50,6 +60,21 @@ class RestToolsStatusCodes {
 	const HTTP_UNSUPPORTED_MEDIA_TYPE = 415;
 	const HTTP_REQUESTED_RANGE_NOT_SATISFIABLE = 416;
 	const HTTP_EXPECTATION_FAILED = 417;
+	const HTTP_IM_A_TEAPOT = 418;
+	const HTTP_ENHANCE_YOUR_CALM = 420;
+	const HTTP_UNPROCESSABLE_ENTITY = 422;
+	const HTTP_LOCKED = 423;
+	const HTTP_FAILED_DEPENDENCY = 424;
+	//const HTTP_METHOD_FAILURE = 424;
+	const HTTP_UNORDERED_COLLECTION = 425;
+	const HTTP_UPGRADE_REQUIRED = 426;
+	const HTTP_PRECONDITION_REQUIRED = 428;
+	const HTTP_TOO_MANY_REQUESTS = 429;
+	const HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = 431;
+	const HTTP_NO_RESPONSE = 444;
+	const HTTP_RETRY_WITH = 449;
+	const HTTP_PARENTAL_CONTROLS = 450;
+	const HTTP_CLIENT_CLOSED_REQUEST = 499;
 	// Server Error 5xx
 	const HTTP_INTERNAL_SERVER_ERROR = 500;
 	const HTTP_NOT_IMPLEMENTED = 501;
@@ -57,55 +82,90 @@ class RestToolsStatusCodes {
 	const HTTP_SERVICE_UNAVAILABLE = 503;
 	const HTTP_GATEWAY_TIMEOUT = 504;
 	const HTTP_VERSION_NOT_SUPPORTED = 505;
+	const HTTP_VARIANT_ALSO_NEGOTIATES = 506;
+	const HTTP_INSUFFICIENT_STORAGE = 507;
+	const HTTP_LOOP_DETECTED = 508;
+	const HTTP_BANDWIDTH_EXCEEDED = 509;
+	const HTTP_NOT_EXTENDED = 510;
+	const HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511;
+	const HTTP_NETWORK_READ_TIMEOUT = 598;
+	const HTTP_NETWORK_CONNECT_TIMEOUT = 599;
 		
 	private static $messages = array (
-		100 => 'HTTP 100 Continue',
-		101 => 'HTTP 101 Switching Protocols',
+		100 => 'Continue',
+		101 => 'Switching Protocols',
+		102 => 'Processing',
 		// [Successful 2xx]
-		200 => 'HTTP 200 OK',
-		201 => 'HTTP 201 Created',
-		202 => 'HTTP 202 Accepted',
-		203 => 'HTTP 203 Non-Authoritative Information',
-		204 => 'HTTP 204 No Content',
-		205 => 'HTTP 205 Reset Content',
-		206 => 'HTTP 206 Partial Content',
+		200 => 'OK',
+		201 => 'Created',
+		202 => 'Accepted',
+		203 => 'Non-Authoritative Information',
+		204 => 'No Content',
+		205 => 'Reset Content',
+		206 => 'Partial Content',
+		207 => 'Multi-Status',
+		208 => 'Already Reported',
+		226 => 'IM Used',
 		// [Redirection 3xx]
-		300 => 'HTTP 300 Multiple Choices',
-		301 => 'HTTP 301 Moved Permanently',
-		302 => 'HTTP 302 Found',
-		303 => 'HTTP 303 See Other',
-		304 => 'HTTP 304 Not Modified',
-		305 => 'HTTP 305 Use Proxy',
-		306 => 'HTTP 306 (Unused)',
-		307 => 'HTTP 307 Temporary Redirect',
+		300 => 'Multiple Choices',
+		301 => 'Moved Permanently',
+		302 => 'Found',
+		303 => 'See Other',
+		304 => 'Not Modified',
+		305 => 'Use Proxy',
+		306 => 'Switch Proxy (Unused)',
+		307 => 'Temporary Redirect',
+		308 => 'Permanent Redirect',
 		// [Client Error 4xx]
-		400 => 'HTTP 400 Bad Request',
-		401 => 'HTTP 401 Unauthorized',
-		402 => 'HTTP 402 Payment Required',
-		403 => 'HTTP 403 Forbidden',
-		404 => 'HTTP 404 Not Found',
-		405 => 'HTTP 405 Method Not Allowed',
-		406 => 'HTTP 406 Not Acceptable',
-		407 => 'HTTP 407 Proxy Authentication Required',
-		408 => 'HTTP 408 Request Timeout',
-		409 => 'HTTP 409 Conflict',
-		410 => 'HTTP 410 Gone',
-		411 => 'HTTP 411 Length Required',
-		412 => 'HTTP 412 Precondition Failed',
-		413 => 'HTTP 413 Request Entity Too Large',
-		414 => 'HTTP 414 Request-URI Too Long',
-		415 => 'HTTP 415 Unsupported Media Type',
-		416 => 'HTTP 416 Requested Range Not Satisfiable',
-		417 => 'HTTP 417 Expectation Failed',
+		400 => 'Bad Request',
+		401 => 'Unauthorized',
+		402 => 'Payment Required',
+		403 => 'Forbidden',
+		404 => 'Not Found',
+		405 => 'Method Not Allowed',
+		406 => 'Not Acceptable',
+		407 => 'Proxy Authentication Required',
+		408 => 'Request Timeout',
+		409 => 'Conflict',
+		410 => 'Gone',
+		411 => 'Length Required',
+		412 => 'Precondition Failed',
+		413 => 'Request Entity Too Large',
+		414 => 'Request-URI Too Long',
+		415 => 'Unsupported Media Type',
+		416 => 'Requested Range Not Satisfiable',
+		417 => 'Expectation Failed',
+		418 => 'I\'m A Teapot',
+		420 => 'Enhance Your Calm',
+		422 => 'Unprocessable Entity',
+		423 => 'Locked',
+		424 => 'Failed Dependency / Method Failure',
+		425 => 'Unordered Collection',
+		426 => 'Upgrade Required',
+		428 => 'Precondition Required',
+		429 => 'Too Many Requests',
+		431 => 'Request Header Fields Too Large',
+		444 => 'No Response',
+		449 => 'Retry With',
+		450 => 'Blocked By Windows Parental Controls',
+		499 => 'Client Closed Request',
 		// [Server Error 5xx]
-		500 => 'HTTP 500 Internal Server Error',
-		501 => 'HTTP 501 Not Implemented',
-		502 => 'HTTP 502 Bad Gateway',
-		503 => 'HTTP 503 Service Unavailable',
-		504 => 'HTTP 504 Gateway Timeout',
-		505 => 'HTTP 505 HTTP Version Not Supported'
+		500 => 'Internal Server Error',
+		501 => 'Not Implemented',
+		502 => 'Bad Gateway',
+		503 => 'Service Unavailable',
+		504 => 'Gateway Timeout',
+		505 => 'HTTP Version Not Supported',
+		506 => 'Variant Also Negotiates',
+		507 => 'Insufficient Storage',
+		508 => 'Loop Detected',
+		509 => 'Bandwidth Limit Exceeded',
+		510 => 'Not Extended',
+		511 => 'Network Authentication Required',
+		598 => 'Network Read Timeout Error',
+		599 => 'Network Connect Timeout Error'
 		);
-
+		
 	public static function get_message ($code) {
 		return self::$messages[$code];
 	}
@@ -114,31 +174,7 @@ class RestToolsStatusCodes {
 		return ((is_numeric ($code)) && ($code >= self::HTTP_BAD_REQUEST));
 	}
 
-}	// end-class RestToolsStatusCodes
-
-class RestToolsResult {
-	private	$status = 0;
-	private	$data = null;
-	
-	public function __construct ($status, $data=null) {
-		$this->status = $status;
-		if (!empty ($data) && $data) {
-			$this->data = $data;
-		}
-	}
-	
-	public function status () {
-		return $this->status;
-	}
-	
-	public function data ($data=null) {
-		if (!empty ($data) && $data) {
-			$this->data = $data;
-		}
-		
-		return $this->data;
-	}
-}	// end-class RestToolsResult
+}	// end-class RestToolsStatus
 
 class RestTools {
 	const GET = 'GET';
@@ -209,10 +245,15 @@ class RestTools {
 			}
 		}
 		
-		$data = curl_exec ($handle);
+		$result = curl_exec ($handle);
 		$status = curl_getinfo ($handle, CURLINFO_HTTP_CODE);
 		curl_close ($handle);
-		$result = new RestToolsResult ($status, $data);
+		if (RestToolsStatus::is_error ($status)) {
+			$message = 'HTTP ' . $status . ' (' .
+				RestToolsStatus::get_message ($status) .
+				') during ' . $type . ' of "' . $url . '"';
+			throw new RestToolsException ($message, $status);
+		}
 		return $result;
 	}
 	
