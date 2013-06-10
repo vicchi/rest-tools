@@ -1,12 +1,12 @@
 <?php
 
 class RestToolsException extends Exception {
-	public function __construct ($message, $code, Exception $previous=null) {
-		parent::__construct ($message, $code, $previous);
+	public function __construct($message, $code, Exception $previous=NULL) {
+		parent::__construct($message, $code, $previous);
 	}
 	
-	public function __toString () {
-		return get_class ($this) . " '{$this->message}' in {$this->file}:{$this->line}\n"
+	public function __toString() {
+		return get_class($this) . " '{$this->message}' in {$this->file}:{$this->line}\n"
 			. "{$this->getTraceAsString()}";
 	}
 	
@@ -91,7 +91,7 @@ class RestToolsStatus {
 	const HTTP_NETWORK_READ_TIMEOUT = 598;
 	const HTTP_NETWORK_CONNECT_TIMEOUT = 599;
 		
-	private static $messages = array (
+	private static $messages = array(
 		100 => 'Continue',
 		101 => 'Switching Protocols',
 		102 => 'Processing',
@@ -166,12 +166,12 @@ class RestToolsStatus {
 		599 => 'Network Connect Timeout Error'
 		);
 		
-	public static function get_message ($code) {
+	public static function get_message($code) {
 		return self::$messages[$code];
 	}
 	
-	public static function is_error ($code) {
-		return ((is_numeric ($code)) && ($code >= self::HTTP_BAD_REQUEST));
+	public static function is_error($code) {
+		return((is_numeric ($code)) && ($code >= self::HTTP_BAD_REQUEST));
 	}
 
 }	// end-class RestToolsStatus
@@ -180,17 +180,17 @@ class RestTools {
 	const GET = 'GET';
 	const POST = 'POST';
 	const PUT = 'PUT';
-	const OPTIONS = null;
+	const OPTIONS = NULL;
 	const TIMEOUT = 30;
 
 	static $instance;
 
-	private $options = null;
+	private $options = NULL;
 	
-	public function __construct () {
+	public function __construct() {
 		self::$instance = $this;
 
-		$this->options = array (
+		$this->options = array(
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_TIMEOUT => self::TIMEOUT,
 			CURLOPT_SSL_VERIFYPEER => false,
@@ -202,85 +202,85 @@ class RestTools {
 			);
 	}
 	
-	public function get ($url, $params=null, $headers=null, $options=null) {
-		return $this->request ($url, $params, $headers, $options, self::GET);
+	public function get($url, $params=NULL, $headers=NULL, $options=NULL) {
+		return $this->request($url, $params, $headers, $options, self::GET);
 	}
 	
-	public function put ($url, $data=null, $params=null, $headers=null, $options=null) {
-		if (!empty ($data) && $data) {
-			$options = array (CURLOPT_POSTFIELDS => $data);
+	public function put($url, $data=NULL, $params=NULL, $headers=NULL, $options=NULL) {
+		if (!empty($data) && $data) {
+			$options = array(CURLOPT_POSTFIELDS => $data);
 		}
-		return $this->request ($url, $params, $headers, $options, self::PUT);
+		return $this->request($url, $params, $headers, $options, self::PUT);
 	}
 	
-	public function post ($url, $params=null, $headers=null, $options=null) {
-		return $this->request ($url, $params, $headers, $options, self::POST);
+	public function post($url, $params=NULL, $headers=NULL, $options=NULL) {
+		return $this->request($url, $params, $headers, $options, self::POST);
 	}
 	
-	private function make_url ($url, $params) {
-		if (!empty ($params) && $params) {
-			$key_value = array ();
+	private function make_url($url, $params) {
+		if (!empty($params) && $params) {
+			$key_value = array();
 			
 			foreach ($params as $key => $value) {
 				$key_value[] = $key . '=' . $value;
 			}	// end-foreach
 			
-			$url_params = str_replace (' ', '+', implode ('&', $key_value));
-			$url = trim ($url) . '?' .$url_params;
+			$url_params = str_replace(' ', '+', implode ('&', $key_value));
+			$url = trim($url) . '?' .$url_params;
 		}
 		
 		return $url;
 	}
 	
-	private function make_post_fields ($params) {
-		$fields = array ();
+	private function make_post_fields($params) {
+		$fields = array();
 		foreach ($params as $key => $value) {
 			//$fields[] = $key . '=' . urlencode ($value);
 			$fields[] = $key . '=' .  $value;
 		}
-		$post_fields = implode ('&', $fields);
+		$post_fields = implode('&', $fields);
 		return $post_fields;
 	}
 	
-	private function request ($url, $params=null, $headers=null, $options=null, $type=self::GET) {
+	private function request($url, $params=NULL, $headers=NULL, $options=NULL, $type=self::GET) {
 		if (self::GET === $type) {
-			$url = $this->make_url ($url, $params);
+			$url = $this->make_url($url, $params);
 		}
 		
-		if (!empty ($options) && $options) {
-			$curl_opts = array_merge ($this->options, $options);
+		if (!empty($options) && $options) {
+			$curl_opts = array_merge($this->options, $options);
 		}
 		else {
 			$curl_opts = $this->options;
 		}
 		
-		$handle = curl_init ();
-		if (!empty ($headers) && $headers) {
+		$handle = curl_init();
+		if (!empty($headers) && $headers) {
 			$curl_opts[CURLOPT_HTTPHEADER] = $headers;
 		}
 		$curl_opts[CURLOPT_URL] = $url;
-		curl_setopt_array ($handle, $curl_opts);
+		curl_setopt_array($handle, $curl_opts);
 		
 		if (self::POST === $type) {
-			curl_setopt ($handle, CURLOPT_POST, true);
-			if (!empty ($params) && $params) {
-				$fields = $this->make_post_fields ($params);
+			curl_setopt($handle, CURLOPT_POST, true);
+			if (!empty($params) && $params) {
+				$fields = $this->make_post_fields($params);
 				//echo 'post_fields: ' . $fields . PHP_EOL;
-				curl_setopt ($handle, CURLOPT_POSTFIELDS, $fields);
+				curl_setopt($handle, CURLOPT_POSTFIELDS, $fields);
 			}
 		}
 		elseif (self::PUT === $type) {
-			curl_setopt ($handle, CURLOPT_CUSTOMREQUEST, self::PUT);
+			curl_setopt($handle, CURLOPT_CUSTOMREQUEST, self::PUT);
 		}
 		
-		$result = curl_exec ($handle);
-		$status = curl_getinfo ($handle, CURLINFO_HTTP_CODE);
-		curl_close ($handle);
-		if (RestToolsStatus::is_error ($status)) {
+		$result = curl_exec($handle);
+		$status = curl_getinfo($handle, CURLINFO_HTTP_CODE);
+		curl_close($handle);
+		if (RestToolsStatus::is_error($status)) {
 			$message = 'HTTP ' . $status . ' (' .
-				RestToolsStatus::get_message ($status) .
+				RestToolsStatus::get_message($status) .
 				') during ' . $type . ' of "' . $url . '"';
-			throw new RestToolsException ($message, $status);
+			throw new RestToolsException($message, $status);
 		}
 		return $result;
 	}
