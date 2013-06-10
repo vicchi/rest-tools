@@ -179,6 +179,7 @@ class RestToolsStatus {
 class RestTools {
 	const GET = 'GET';
 	const POST = 'POST';
+	const PUT = 'PUT';
 	const OPTIONS = null;
 	const TIMEOUT = 30;
 
@@ -192,12 +193,24 @@ class RestTools {
 		$this->options = array (
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_TIMEOUT => self::TIMEOUT,
-			CURLOPT_SSL_VERIFYPEER => false
+			CURLOPT_SSL_VERIFYPEER => false,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_VERBOSE => true,		// enable for debug
+			CURLOPT_HEADER => true,			// enable for debug
+			//CURLINFO_HEADER_OUT => true,	// enable for debug
+			CURLOPT_USERAGENT => 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1'
 			);
 	}
 	
 	public function get ($url, $params=null, $headers=null, $options=null) {
 		return $this->request ($url, $params, $headers, $options, self::GET);
+	}
+	
+	public function put ($url, $data=null, $params=null, $headers=null, $options=null) {
+		if (!empty ($data) && $data) {
+			$options = array (CURLOPT_POSTFIELDS => $data);
+		}
+		return $this->request ($url, $params, $headers, $options, self::PUT);
 	}
 	
 	public function post ($url, $params=null, $headers=null, $options=null) {
@@ -217,6 +230,16 @@ class RestTools {
 		}
 		
 		return $url;
+	}
+	
+	private function make_post_fields ($params) {
+		$fields = array ();
+		foreach ($params as $key => $value) {
+			//$fields[] = $key . '=' . urlencode ($value);
+			$fields[] = $key . '=' .  $value;
+		}
+		$post_fields = implode ('&', $fields);
+		return $post_fields;
 	}
 	
 	private function request ($url, $params=null, $headers=null, $options=null, $type=self::GET) {
@@ -241,8 +264,13 @@ class RestTools {
 		if (self::POST === $type) {
 			curl_setopt ($handle, CURLOPT_POST, true);
 			if (!empty ($params) && $params) {
-				curl_setopt ($handle, CURLOPT_POSTFIELDS, $params);
+				$fields = $this->make_post_fields ($params);
+				//echo 'post_fields: ' . $fields . PHP_EOL;
+				curl_setopt ($handle, CURLOPT_POSTFIELDS, $fields);
 			}
+		}
+		elseif (self::PUT === $type) {
+			curl_setopt ($handle, CURLOPT_CUSTOMREQUEST, self::PUT);
 		}
 		
 		$result = curl_exec ($handle);
